@@ -1,9 +1,8 @@
 'use strict';
 
-var CMU_LOCATION = { lat: 40.4433, lng: -79.9436 };
-var TRANSITION = {
-	deltaCount: 100,
-	delay: 10
+var CONST = {
+	CMU_LOCATION : { lat: 40.4433, lng: -79.9436 },
+	TRANSITION: { deltaCount: 100, delay: 10 }
 };
 
 var area = {
@@ -14,7 +13,7 @@ var area = {
 var map;
 var directionsService;
 var cars = [{
-		id: 'car1',
+		icon: 'images/car1.png', 
 		name: 'Car 1',
 		disabled: false,
 		startLocation: 'Forbes Avenue and Euler Way Pittsburgh, PA',
@@ -25,11 +24,22 @@ var cars = [{
 		towardEnd: true,
 		log: []
 	},{	
-		id: 'car2',
+		icon: 'images/car2.png', 
 		name: 'Car 2', 
 		disabled: false,
 		startLocation: 'S. Negley Ave and Fifth Ave Pittsburgh, PA',
 		endLocation: 'Forbes Avenue and Euler Way Pittsburgh, PA',
+		route: undefined,
+		currentPosition: undefined,
+		currentStep: 0,
+		towardEnd: true,
+		log: []
+},{	
+		icon: 'images/car3.png', 
+		name: 'Car 3', 
+		disabled: false,
+		startLocation: 'Forbes Avenue and Shenley Drive Pittsburgh, PA',
+		endLocation: 'Centre Avenue and Bigelow Blvd Pittsburgh, PA',
 		route: undefined,
 		currentPosition: undefined,
 		currentStep: 0,
@@ -75,8 +85,12 @@ function MainCtrl($scope) {
 		}		
 	};
 
-	self.crash = function(car) {
-		car.disabled = true;
+	self.toggleDisableCar = function(car) {
+		car.disabled = !car.disabled;
+		if (car.disabled) {
+			var message = {message: 'Disabled vehicle', date: new Date(), location: car.currentPosition, source: car.name};
+			broadcastMessage(car, message);	
+		}
 	}
 
 	map = setupMap();
@@ -90,7 +104,7 @@ function logMessage(car, message) {
 	var alreadyLogged = false
 	
 	angular.forEach(car.log, function(log) {
-		if (log.message === message.message && log.location === message.location) {
+		if (log.message === message.message && log.location.lat() === message.location.lat() && log.location.lng() === message.location.lng()) {
 			alreadyLogged = true;
 		}
 	});
@@ -98,6 +112,18 @@ function logMessage(car, message) {
 	if (!alreadyLogged) {
 		car.log.push(message);
 	}
+}
+
+function broadcastMessage(car, message) {
+	var broadcastMessage = {};
+	angular.copy(message, broadcastMessage);
+	broadcastMessage.source = car.name;
+		
+	angular.forEach(cars, function(car2) {
+		if (car !== car2) {
+			logMessage(car2, broadcastMessage);
+		}
+	});	
 }
 
 
@@ -122,7 +148,7 @@ function setupCar(car, state, $scope) {
 function animateCar(car, state, $scope) {	
 	var marker = new google.maps.Marker({
 		position: car.currentPosition,
-		icon: 'images/car.png'
+		icon: car.icon
 	});
 	
 	marker.setMap(map);
@@ -152,24 +178,24 @@ function animateCar(car, state, $scope) {
 }
 
 function updateData(car, state) {
+	var message = undefined;
 	
 	if (state.accident && area.accident.getBounds().contains(car.currentPosition)) {
-		logMessage(car, {message: "Accident", location: area.accident.getCenter(), date: new Date(), source: 'Infrastructure Transmitter'});
+		message = {message: "Accident", location: area.accident.getCenter(), date: new Date(), source: 'Transmitter'}
+		logMessage(car, message);
 	}
 	if (state.rain && area.rain.getBounds().contains(car.currentPosition)) {
-		
-		angular.forEach(cars, function(car2) {
-			if (car !== car2) {
-				logMessage(car2, {message: "Rain", location: area.rain.getCenter(), date: new Date(), source: car.name});
-			}
-		});
+		message = {message: "Rain", location: area.rain.getCenter(), date: new Date(), source: car.name};
 	}
 	
+	if (message) {
+		broadcastMessage(car, message);
+	}
 }
 
 function transitionToPosition(car, marker, newPosition) {
-	var latitudeDelta = (newPosition.lat() - car.currentPosition.lat()) / TRANSITION.deltaCount;
-	var longitudeDelta = (newPosition.lng() - car.currentPosition.lng()) / TRANSITION.deltaCount;
+	var latitudeDelta = (newPosition.lat() - car.currentPosition.lat()) / CONST.TRANSITION.deltaCount;
+	var longitudeDelta = (newPosition.lng() - car.currentPosition.lng()) / CONST.TRANSITION.deltaCount;
 
 	changePosition(car, marker, latitudeDelta, longitudeDelta, 0)
 }
@@ -181,10 +207,10 @@ function changePosition(car, marker, latitudeDelta, longitudeDelta, deltaCount) 
 	car.currentPosition = newPosition;
 	marker.setPosition(newPosition);
 	
-	if (deltaCount < TRANSITION.deltaCount) {
+	if (deltaCount < CONST.TRANSITION.deltaCount) {
 		setTimeout(function() {
 			changePosition(car, marker, latitudeDelta, longitudeDelta, deltaCount + 1);
-		}, TRANSITION.delay);
+		}, CONST.TRANSITION.delay);
 	} 
 }
 
@@ -198,7 +224,7 @@ function setupMap() {
 		fillColor: '#FF0000',
 		fillOpacity: 0.35,
 		map: null,
-		center: CMU_LOCATION,
+		center: CONST.CMU_LOCATION,
 		radius: 300,
 		draggable: true
 	  });
@@ -211,13 +237,13 @@ function setupMap() {
   		fillColor: '#009ACD',
   		fillOpacity: 0.35,
   		map: null,
-  		center: CMU_LOCATION,
-  		radius: 300,
+  		center: CONST.CMU_LOCATION,
+  		radius: 500,
   		draggable: true
   	  });
 	
 	var mapOptions = {
-		center: CMU_LOCATION,
+		center: CONST.CMU_LOCATION,
 		zoom: 15,
 		disableDefaultUI: true,
 		draggable: false,
