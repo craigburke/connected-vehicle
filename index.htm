@@ -1,29 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="carApp">
   <head>
     <style type="text/css">
       html, body, #container, #container .row, #map-column, #map-canvas { height: 100%; }
     </style>
     <script type="text/javascript"
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBZk_OT8STtd6da5rUwzhugWPZkUkRMlKU">
-    </script>
-    <script type="text/javascript" src="scripts/jquery-2.1.1.min.js"></script>
-    <script type="text/javascript" src="scripts/car.js"></script>
+	  </script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.27/angular.min.js"></script>
+    <script type="text/javascript" src="scripts/app.js"></script>
+    <script type="text/javascript" src="scripts/controllers.js"></script>
+
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/font-awesome.min.css">
 	
   </head>
-  <body>
+  <body ng-controller="MainCtrl as ctrl">
 	  <div id="container" class="container-fluid">
   	  <div class="page-header">
   	    <h1>Connected Vehicle Demo</h1>
 		<p><div class="btn-group" role="group" aria-label="...">
-		  <button id="play" type="button" class="btn btn-default">
-			  <span class="pause"><i class="fa fa-pause"></i> Pause </span>
-		  	  <span class="play" style="display: none"><i class="fa fa-play"></i> Play <span>
+		  
+		  <button type="button" class="btn btn-default" ng-click="ctrl.togglePlay()">
+			  <span ng-show="ctrl.state.play"><i class="fa fa-pause"></i> Pause </span>
+		  	  <span ng-hide="ctrl.state.play"><i class="fa fa-play"></i> Play <span>
 		  </button>
-		  <button id="rain" type="button" class="btn btn-default"><i class="fa fa-cloud"></i> Rain</button>
-		  <button id="emergency" type="button" class="btn btn-default"><i class="fa fa-warning"></i> Emergency</button>
+		  
+		  <button ng-click="ctrl.toggleRain()" type="button" class="btn btn-default"><i class="fa fa-cloud"></i> Rain</button>
+		  <button ng-click="ctrl.toggleEmergency()" type="button" class="btn btn-default"><i class="fa fa-warning"></i> Emergency</button>
 		</div></p>
 
   	  </div>
@@ -34,22 +38,20 @@
 			  <div id="map-canvas" ></div>
 		  </div>  
 		  <div class="col-sm-3">
-			<div id="car1" class="panel panel-default">
-			  <div class="panel-heading">
-			    <h3 class="panel-title">Car 1</h3>
-			  </div>
-			  <div class="panel-body data">
-			  </div>
-			</div>
-			
-			<div id="car2" class="panel panel-default">
-			  <div class="panel-heading">
-			    <h3 class="panel-title">Car 2</h3>
-			  </div>
-			  <div class="panel-body data">
-			  </div>
-			</div>
-			
+			  <div class="panel panel-default" ng-repeat="car in ctrl.cars">
+		  		<div class="panel-heading">
+		    		<h3 class="panel-title">{{car.name}}</h3>
+		  	  	</div>
+		  	  	<div class="panel-body data">
+					<ul>
+					<li ng-repeat="log in car.log">
+						{{log.message}} {{ log.date | date:'medium' }}
+					</li>
+					</ul>
+		  	  	</div>
+		</div>
+	
+	
 			
 		  </div>
 	  	</div>
