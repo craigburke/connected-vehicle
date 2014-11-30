@@ -7,21 +7,16 @@ var TRANSITION = {
 };
 
 var area = {
-	warning: undefined,
-	emergency: undefined
+	accident: undefined,
+	rain: undefined
 };
 
 var map;
 var directionsService;
-
-function MainCtrl($scope) {
-    directionsService = new google.maps.DirectionsService();
-	
-    var self = this;
-	
-	self.cars = [{
+var cars = [{
 		id: 'car1',
-		name: 'Car 1', 
+		name: 'Car 1',
+		disabled: false,
 		startLocation: 'Forbes Avenue and Euler Way Pittsburgh, PA',
 		endLocation: 'S. Negley Ave and Fifth Ave Pittsburgh, PA',
 		route: undefined,
@@ -32,6 +27,7 @@ function MainCtrl($scope) {
 	},{	
 		id: 'car2',
 		name: 'Car 2', 
+		disabled: false,
 		startLocation: 'S. Negley Ave and Fifth Ave Pittsburgh, PA',
 		endLocation: 'Forbes Avenue and Euler Way Pittsburgh, PA',
 		route: undefined,
@@ -39,7 +35,14 @@ function MainCtrl($scope) {
 		currentStep: 0,
 		towardEnd: true,
 		log: []
-	}];
+}];
+
+function MainCtrl($scope) {
+    directionsService = new google.maps.DirectionsService();
+	
+    var self = this;
+	
+	self.cars = cars;
 	
 	self.state = {
 		play: true,
@@ -53,25 +56,48 @@ function MainCtrl($scope) {
 	
 	self.toggleRain = function() {
 		self.state.rain = !self.state.rain;
-	};
-	
-	self.toggleEmergency = function() {
-		self.state.emergency = !self.state.emergency;
-		if (self.state.emergency) {
-			area.warning.setMap(map);
-			area.emergency.setMap(map); 		 
+		if (self.state.rain) {
+			area.rain.setMap(map); 		 
 		}
 		else {
-			area.warning.setMap(null);
-			area.emergency.setMap(null);
+			area.rain.setMap(null);
+		}		
+		
+	};
+	
+	self.toggleAccident = function() {
+		self.state.accident = !self.state.accident;
+		if (self.state.accident) {
+			area.accident.setMap(map); 		 
+		}
+		else {
+			area.accident.setMap(null);
 		}		
 	};
+
+	self.crash = function(car) {
+		car.disabled = true;
+	}
 
 	map = setupMap();
 	angular.forEach(self.cars, function(car) {
 		setupCar(car, self.state, $scope);
 	});
 	
+}
+
+function logMessage(car, message) {
+	var alreadyLogged = false
+	
+	angular.forEach(car.log, function(log) {
+		if (log.message === message.message && log.location === message.location) {
+			alreadyLogged = true;
+		}
+	});
+	
+	if (!alreadyLogged) {
+		car.log.push(message);
+	}
 }
 
 
@@ -96,7 +122,6 @@ function setupCar(car, state, $scope) {
 function animateCar(car, state, $scope) {	
 	var marker = new google.maps.Marker({
 		position: car.currentPosition,
-		title:"Hello World!",
 		icon: 'images/car.png'
 	});
 	
@@ -104,7 +129,7 @@ function animateCar(car, state, $scope) {
 		
 	setInterval(function() {
 		
-		if (state.play) {
+		if (state.play && !car.disabled) {
 			if (!car.towardEnd && car.currentStep === 0) {
 				car.towardEnd = true;
 				car.currentStep = 1;
@@ -127,17 +152,18 @@ function animateCar(car, state, $scope) {
 }
 
 function updateData(car, state) {
-	/* if (state.emergency) {
-		if (area.emergency.getBounds().contains(car.currentPosition)) {
-			car.log.push({message: "Emergency", date: new Date()});
-		}
-		else if (area.warning.getBounds().contains(car.currentPosition)) {
-			car.log.push({message:"WARNING", date: new Date()});
-		}	
+	
+	if (state.accident && area.accident.getBounds().contains(car.currentPosition)) {
+		logMessage(car, {message: "Accident", location: area.accident.getCenter(), date: new Date(), source: 'Infrastructure Transmitter'});
 	}
-	if (state.rain) {
-		car.log.push({message: "RAIN", date: new Date()});
-	} */
+	if (state.rain && area.rain.getBounds().contains(car.currentPosition)) {
+		
+		angular.forEach(cars, function(car2) {
+			if (car !== car2) {
+				logMessage(car2, {message: "Rain", location: area.rain.getCenter(), date: new Date(), source: car.name});
+			}
+		});
+	}
 	
 }
 
@@ -164,19 +190,8 @@ function changePosition(car, marker, latitudeDelta, longitudeDelta, deltaCount) 
 
 
 function setupMap() {
-	
-    area.warning = new google.maps.Circle({
-		strokeColor: '#fcf8e3',
-		strokeOpacity: 0.8,
-		strokeWeight: 2,
-		fillColor: '#faebcc',
-		fillOpacity: 0.35,
-		map: null,
-		center: CMU_LOCATION,
-		radius: 500
-    });
-   
-	area.emergency = new google.maps.Circle({
+
+	area.accident = new google.maps.Circle({
 		strokeColor: '#FF0000',
 		strokeOpacity: 0.8,
 		strokeWeight: 2,
@@ -184,10 +199,24 @@ function setupMap() {
 		fillOpacity: 0.35,
 		map: null,
 		center: CMU_LOCATION,
-		radius: 300
+		radius: 300,
+		draggable: true
 	  });
 	
-	var options = {
+	
+  	area.rain = new google.maps.Circle({
+  		strokeColor: '#236B8E',
+  		strokeOpacity: 0.8,
+  		strokeWeight: 2,
+  		fillColor: '#009ACD',
+  		fillOpacity: 0.35,
+  		map: null,
+  		center: CMU_LOCATION,
+  		radius: 300,
+  		draggable: true
+  	  });
+	
+	var mapOptions = {
 		center: CMU_LOCATION,
 		zoom: 15,
 		disableDefaultUI: true,
@@ -197,7 +226,7 @@ function setupMap() {
 		disableDoubleClickZoom: true
     };
 	
-    return new google.maps.Map(document.getElementById('map-canvas'), options);
+    return new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 }
 
 
