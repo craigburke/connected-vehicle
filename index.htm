@@ -61,7 +61,8 @@
 					<li class="list-group-item" ng-repeat="log in car.log | reverse | limitTo: 10">
 						<strong>"{{log.message}}"</strong>
 						from {{log.source}}<br />
-						<small>Location: {{log.location.lat()}}, {{log.location.lng()}}<small>
+						<small>Location: {{log.location.lat()}}, {{log.location.lng()}}</small><br />
+						<small>Date: {{log.date | date:'medium'}}</small><br />	
 					</li>
 					</ul>
 		  	  	</div>
