@@ -43,16 +43,20 @@
 		    		<h3 class="panel-title"><img ng-src="{{car.icon}}"/> {{car.name}} <span ng-show="car.disabled">(Disabled)</span></h3>
 		  	  	</div>
 		  	  	<div class="panel-body data">
+					<p>Location: {{ car.currentPosition.lat() }}, {{ car.currentPosition.lng() }}</p>
+
 					<button ng-click="ctrl.toggleDisableCar(car)" class="btn btn-default">
 	  			  	  <span ng-hide="car.disabled"><i class="fa fa-remove"></i> Disable Vehicle</span>
 	  		  	  	  <span ng-show="car.disabled"><i class="fa fa-check"></i> Enable Vehicle<span>
 					</button>
+					
 					<h4>Messages Received</h4>
 
 					<ul class="list-group">
 					<li class="list-group-item" ng-repeat="log in car.log">
 						<strong>"{{log.message}}"</strong>
-						from {{log.source}}
+						from {{log.source}}<br />
+						<small>Location: {{log.location.lat()}}, {{log.location.lng()}}<small>
 					</li>
 					</ul>
 		  	  	</div>
