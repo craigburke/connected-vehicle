@@ -19,6 +19,7 @@
 	  <div id="container" class="container-fluid">
   	  <div class="page-header">
   	    <h1>Connected Vehicle Demo</h1>
+		<h4>Craig Burke, Mark Howerton, Patti Leonard, Ryan Rook, Bryan Thomas</h4>
 		<p><div class="btn-group" role="group" aria-label="...">
 		  
 		  <button type="button" class="btn btn-default" ng-click="ctrl.togglePlay()">
@@ -29,6 +30,10 @@
 		  <button ng-click="ctrl.toggleRain()" ng-class="{active: ctrl.state.rain}" type="button" class="btn btn-default"><i class="fa fa-cloud"></i> Rain</button>
 		  <button ng-click="ctrl.toggleAccident()" ng-class="{active: ctrl.state.accident}" type="button" class="btn btn-default"><i class="fa fa-warning"></i> Accident</button>
 		</div></p>
+
+<div class="alert alert-info" role="alert">
+	Click the <strong>Accident</strong> or <strong>Rain</strong> to simulate real world events, you can then drag and drop the circle of the affected area. If you click <strong>Disable Vehicle</strong> all other vehicles will be notified.
+</div>
 
   	  </div>
 	  	
@@ -53,7 +58,7 @@
 					<h4>Messages Received</h4>
 
 					<ul class="list-group">
-					<li class="list-group-item" ng-repeat="log in car.log">
+					<li class="list-group-item" ng-repeat="log in car.log | reverse | limitTo: 10">
 						<strong>"{{log.message}}"</strong>
 						from {{log.source}}<br />
 						<small>Location: {{log.location.lat()}}, {{log.location.lng()}}<small>
